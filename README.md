@@ -35,15 +35,12 @@ Input data configuration is an artifact of the way [my client](https://github.co
 * vel_y
 * vel_z
 * **lap***
-* **folder***
 
 With the exception of **image**, **lap**, and **folder**, these are simply the data contained in the [telemetry messages](https://docs.donkeycar.com/guide/simulator/#api) sent by the [Donkey Simulator](https://docs.donkeycar.com/guide/simulator/).
 
 \* **image**: This is the _filename_ of the image corresponding to each record. This is in place of the base-64 encoded string sent by the simulator. The images themselves are stored in another folder.
 
 \* **lap**: This is the lap from which the record was taken. The sim does not provide lap number in its telemetry messages; my client tracks them separately.
-
-\* **folder**: The folder in which the CSV file containing the record is located.
 
 ## Trajectory Plotting Data
 
