@@ -36,7 +36,7 @@ Input data configuration is an artifact of the way [my client](https://github.co
 * vel_z
 * **lap***
 
-With the exception of **image**, **lap**, and **folder**, these are simply the data contained in the [telemetry messages](https://docs.donkeycar.com/guide/simulator/#api) sent by the [Donkey Simulator](https://docs.donkeycar.com/guide/simulator/).
+With the exception of **image** and **lap**, these are simply the data contained in the [telemetry messages](https://docs.donkeycar.com/guide/simulator/#api) sent by the [Donkey Simulator](https://docs.donkeycar.com/guide/simulator/).
 
 \* **image**: This is the _filename_ of the image corresponding to each record. This is in place of the base-64 encoded string sent by the simulator. The images themselves are stored in another folder.
 
