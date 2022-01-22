@@ -44,7 +44,6 @@ With the exception of **image**, **lap**, and **folder**, these are simply the d
 
 ## Trajectory Plotting Data
 
-To plot trajectory, you need a dataframe with at least **pos_x** and **pos_z**. Beyond that, you should include anything you want to use as a "hue" to for any colormapped plots. By default, I use **steering**, **throttle**, **speed**, and **activeNode**.
-
+To plot trajectory, you need a dataframe with **pos_x**, **pos_z**, **lap_time**, and whatever you want to use as a hue for colormapping. By default, I use **steering**, **throttle**, **speed**, and **activeNode**.
 
 * Please note that I have renamed the "steering_angle" column as "steering", as is only right and good.
