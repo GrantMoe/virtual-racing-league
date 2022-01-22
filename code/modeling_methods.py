@@ -2,15 +2,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from os.path import exists
-
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import Input, Conv2D, Dense, Dropout, Flatten, Convolution2D, MaxPooling2D, LSTM
 from tensorflow.keras.metrics import MAE, MSE, RootMeanSquaredError
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import TimeDistributed as TD
 
+from tensorflow.keras.layers import TimeDistributed as TD
 
 # Returns the fit model and history to be saved (and plotted) as desired
 def run_model(model, X_train, y_train, X_test, y_test, batch_size, epochs, early_stop_patience=5, verbose=1):
@@ -131,15 +130,19 @@ def plot_metrics(history, batch_size, dual_outputs):
 # Minor changes have been made to fit my specific input and outputs
 # -------------------------------------------------------------------
 
-# This function replicates KerasIMU create_model() method
+# This function approximates KerasIMU create_model()
 # It consolidates the default_imu() method with helper core_cnn_layers()
 # It has been modfied to allow specification of output layer configuration,
 # as well as to adjust the telemetry input layer to suit a wider range of
 # input sizes.
-def create_donkey_vimu(cam_input_shape, telem_input_shape, dual_outputs):
-    telem_units = (telem_input_shape[0]+1) * 3 
+def create_donkey_vimu(img_input_shape, tel_input_shape, dual_outputs):
+    
+    # power of 2 by convention
+    tel_nodes = 2**(tel_input_shape[0] - 1).bit_length()
+    
     drop = 0.2
-    img_in = Input(shape=cam_input_shape, name='img_in') 
+    
+    img_in = Input(shape=img_input_shape, name='img_in') 
     x = img_in
     x = conv2d(24, 5, 2, 1)(x)
     x = Dropout(drop)(x)
@@ -156,11 +159,13 @@ def create_donkey_vimu(cam_input_shape, telem_input_shape, dual_outputs):
     x = Dropout(drop)(x)
     x = Dense(50, activation='relu', name='dense_2')(x)
     x = Dropout(drop)(x)
-    telem_in = Input(telem_input_shape, name='telem_in')
-    y = telem_in
-    y = Dense(21, activation='relu', name='dense_3')(y)
-    y = Dense(21, activation='relu', name='dense_4')(y)
-    y = Dense(21, activation='relu', name='dense_5')(y)
+    
+    tel_in = Input(tel_input_shape, name='tel_in')
+    y = tel_in
+    y = Dense(tel_nodes, activation='relu', name='dense_3')(y)
+    y = Dense(tel_nodes, activation='relu', name='dense_4')(y)
+    y = Dense(tel_nodes, activation='relu', name='dense_5')(y)
+    
     z = concatenate([x, y])
     z = Dense(50, activation='relu', name='dense_6')(z)
     z = Dropout(drop)(z)
@@ -177,7 +182,6 @@ def create_donkey_vimu(cam_input_shape, telem_input_shape, dual_outputs):
         # combined output
         outputs = Dense(2, activation='linear', name='combined_outputs')(z)
 
-    # the model needs to specify the additional input here
     model = Model(inputs=[img_in, telem_in], outputs=outputs)
     return model
 
@@ -191,7 +195,7 @@ def create_donkey_vimu(cam_input_shape, telem_input_shape, dual_outputs):
 #     img_in = Input(shape=img_seq_shape, name='img_in')
 #     tel_in = Input(shape=tel_seq_shape, name='tel_in')
     
-#     # power of 2 by convention. SHOULD never be zero.
+#     # power of 2 by convention
 #     n_tel_nodes = 2**(tel_input_shape[2] - 1).bit_length()
     
 #     drop_out = 0.3
