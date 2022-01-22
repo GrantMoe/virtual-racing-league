@@ -182,7 +182,7 @@ def create_donkey_vimu(img_input_shape, tel_input_shape, dual_outputs):
         # combined output
         outputs = Dense(2, activation='linear', name='combined_outputs')(z)
 
-    model = Model(inputs=[img_in, telem_in], outputs=outputs)
+    model = Model(inputs=[img_in, tel_in], outputs=outputs)
     return model
 
 ## See above for source. WIP adapting it.
@@ -239,7 +239,7 @@ def create_donkey_vimu(img_input_shape, tel_input_shape, dual_outputs):
 #         # combined output
 #         outputs = Dense(2, activation='linear', name='combined_outputs')(z)
 
-#     model = Model(inputs=[img_in, telem_in], outputs=outputs, name='lstm')
+#     model = Model(inputs=[img_in, tel_in], outputs=outputs, name='lstm')
 
 
 
