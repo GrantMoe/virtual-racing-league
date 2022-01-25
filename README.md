@@ -48,4 +48,6 @@ To plot trajectory, you need a dataframe with **pos_x**, **pos_z**, **lap_time**
 
 * Please note that I have renamed the "steering_angle" column as "steering", as is only right and good.
 
+## Gallery
+
 ![18,15 second lap trajectory and speed](./assets/18_15_lap.gif)  
