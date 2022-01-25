@@ -47,3 +47,5 @@ With the exception of **image** and **lap**, these are simply the data contained
 To plot trajectory, you need a dataframe with **pos_x**, **pos_z**, **lap_time**, and whatever you want to use as a hue for colormapping. By default, I use **steering**, **throttle**, **speed**, and **activeNode**.
 
 * Please note that I have renamed the "steering_angle" column as "steering", as is only right and good.
+
+![18,15 second lap trajectory and speed](./assets/18_15_lap.gif)  
