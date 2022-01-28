@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -5,6 +6,7 @@ from os.path import exists
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import Input, Conv2D, Dense, Dropout, Flatten, Convolution2D, MaxPooling2D, LSTM
+from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 from tensorflow.keras.metrics import MAE, MSE, RootMeanSquaredError
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
@@ -13,8 +15,8 @@ from tensorflow.keras.layers import TimeDistributed as TD
 
 # Returns the fit model and history to be saved (and plotted) as desired
 def run_model(model, X_train, y_train, X_test, y_test, batch_size, epochs, early_stop_patience=5, verbose=1):
-    if early_stop_patience:
-        stop_early = EarlyStopping(patience=early_stop_patience)
+    if early_stop_patience != None: # early_stop_patience can be 0
+        stop_early = EarlyStopping(patience=early_stop_patience, restore_best_weights=True)
         callbacks = [stop_early]
     else:
         callbacks = None
@@ -30,17 +32,36 @@ def run_model(model, X_train, y_train, X_test, y_test, batch_size, epochs, early
     return model, results
 
 
+# def run_model(model, train_data, test_data, batch_size, epochs, early_stop_patience=5, verbose=1):
+#     if early_stop_patience != None: # early_stop_patience can be 0
+#         stop_early = EarlyStopping(patience=early_stop_patience)
+#         callbacks = [stop_early]
+#     else:
+#         callbacks = None
+#     results = model.fit(
+#         x=train_data,
+#         batch_size=batch_size, 
+#         epochs=epochs, 
+#         callbacks=callbacks,
+#         validation_data=test_data,
+#         verbose=verbose
+#     )
+#     return model, results
+
+
+
 # Records model result metrics and supplied hyperparameters
 # Loads, adds to, then saves the shared model history CSV
 # Returns the path to where the model is saved.
 # Called in a modeling loop
-def save_model(model_directory, model, results, batch_size, dual_outputs, scaler_file, telemetry_columns):
+def save_model(model_directory, model, results, batch_size, dual_outputs, scaler_file, telemetry_columns, dataset_directory):
     model_history_file = '../models/model_history.csv'
     model_index = 0
+    history_columns = ['model_file', 'batch_size', 'telemetry_columns', 'dataset_directory'
+                       'scaler_file', 'mse_score', 'rmse_score', 'mae_score']
     ## Make sure model history exists
     if not exists(model_history_file):
-        model_history = pd.DataFrame(columns=['model_file', 'scaler_file', 'batch_size', 'telemetry_columns'
-                                              'mse_score', 'rmse_score'])
+        model_history = pd.DataFrame(columns=history_columns)
     else:
         model_history = pd.read_csv(model_history_file, index_col=0)
         model_index = max(0, model_history.index.max() + 1)
@@ -50,30 +71,31 @@ def save_model(model_directory, model, results, batch_size, dual_outputs, scaler
     
     history_dictionary = {
         'model_file': model_file,
-        'scaler_file': scaler_file,
         'batch_size': batch_size,
-        'telemetry_columns': '[' + ', '.join(f"'{t}'" for t in telemetry_columns) + ']'
+        'telemetry_columns': '[' + ', '.join(f"'{t}'" for t in telemetry_columns) + ']',
+        'dataset_directory': dataset_directory,
+        'scaler_file': scaler_file,
         # 'history': results.history, # uncomment for lots of data
     }
     if dual_outputs:
-        history_dictionary['mae_score'] = (
-            results.history['val_steering_outputs_mae'][-1],
-            results.history['val_throttle_outputs_mae'][-1],
-        )
         history_dictionary['mse_score'] = (
             results.history['val_steering_outputs_loss'][-1],
             results.history['val_throttle_outputs_loss'][-1]
+        )
+        history_dictionary['mae_score'] = (
+            results.history['val_steering_outputs_mae'][-1],
+            results.history['val_throttle_outputs_mae'][-1],
         )
         history_dictionary['rmse_score'] = (
             results.history['val_steering_outputs_root_mean_squared_error'][-1],
             results.history['val_throttle_outputs_root_mean_squared_error'][-1] 
         )
     else:
-        history_dictionary['mae_score'] = (
-            results.history['val_mae'][-1],
-        )
         history_dictionary['mse_score'] = (
             results.history['val_loss'][-1],
+        )
+        history_dictionary['mae_score'] = (
+            results.history['val_mae'][-1],
         )
         history_dictionary['rmse_score'] = (
             results.history['val_root_mean_squared_error'][-1],
@@ -144,6 +166,7 @@ def create_donkey_vimu(img_input_shape, tel_input_shape, dual_outputs):
     
     img_in = Input(shape=img_input_shape, name='img_in') 
     x = img_in
+    x = Rescaling(1./255)(x)
     x = conv2d(24, 5, 2, 1)(x)
     x = Dropout(drop)(x)
     x = conv2d(32, 5, 2, 2)(x)
@@ -159,13 +182,16 @@ def create_donkey_vimu(img_input_shape, tel_input_shape, dual_outputs):
     x = Dropout(drop)(x)
     x = Dense(50, activation='relu', name='dense_2')(x)
     x = Dropout(drop)(x)
-    
+
     tel_in = Input(tel_input_shape, name='tel_in')
     y = tel_in
     y = Dense(tel_nodes, activation='relu', name='dense_3')(y)
+    y = Dropout(drop)(y)
     y = Dense(tel_nodes, activation='relu', name='dense_4')(y)
+    y = Dropout(drop)(y)
     y = Dense(tel_nodes, activation='relu', name='dense_5')(y)
-    
+    y = Dropout(drop)(y)
+
     z = concatenate([x, y])
     z = Dense(50, activation='relu', name='dense_6')(z)
     z = Dropout(drop)(z)
