@@ -1,25 +1,35 @@
 import math
+import os
+import shutil
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from os.path import exists
 from tensorflow.keras.backend import concatenate
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.layers import Input, Conv2D, Dense, Dropout, Flatten, Convolution2D, MaxPooling2D, LSTM
 from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 from tensorflow.keras.metrics import MAE, MSE, RootMeanSquaredError
-from tensorflow.keras.models import Model
+from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.optimizers import Adam
 
 from tensorflow.keras.layers import TimeDistributed as TD
 
 # Returns the fit model and history to be saved (and plotted) as desired
 def run_model(model, X_train, y_train, X_test, y_test, batch_size, epochs, early_stop_patience=5, verbose=1):
+    
+    # https://keras.io/api/callbacks/model_checkpoint/
+    # checkpoint_filepath = '/tmp/checkpoint'
+    # if not os.path.exists(checkpoint_filepath):
+        # os.makedirs(checkpoint_filepath, exist_ok=True)
+    checkpoint_filepath = '../models/checkpoint'
+    model_checkpoint_callback = ModelCheckpoint(filepath=checkpoint_filepath, save_best_only=True, save_weights_only=False)
+    callbacks = [model_checkpoint_callback]
+
     if early_stop_patience != None: # early_stop_patience can be 0
-        stop_early = EarlyStopping(patience=early_stop_patience, restore_best_weights=True)
-        callbacks = [stop_early]
-    else:
-        callbacks = None
+        stop_early = EarlyStopping(patience=early_stop_patience)
+        callbacks.append(stop_early)
+
     results = model.fit(
         x=X_train,
         y=y_train,
@@ -29,7 +39,12 @@ def run_model(model, X_train, y_train, X_test, y_test, batch_size, epochs, early
         validation_data=(X_test, y_test),
         verbose=verbose
     )
-    return model, results
+        
+    # model.load_weights(checkpoint_filepath)
+    best_model = load_model(checkpoint_filepath, compile=False)
+    shutil.rmtree(checkpoint_filepath)
+    # os.remove('/tmp/checkpoint') # needed? feels cleaner.
+    return best_model, results
 
 
 # def run_model(model, train_data, test_data, batch_size, epochs, early_stop_patience=5, verbose=1):
@@ -102,7 +117,7 @@ def save_model(model_directory, model, results, batch_size, dual_outputs, scaler
         )
     model_history = model_history.append(history_dictionary, ignore_index=True)
     ## Saving as h5 for backwards compatibility
-    model.save(model_path, save_format='h5')
+    model.save(model_path, include_optimizer=False, save_format='h5')
     model_history.to_csv(model_history_file, index_label='model_index')
     return model_path
     
